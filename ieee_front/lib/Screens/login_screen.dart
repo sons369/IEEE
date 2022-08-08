@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:ieee/main_screen.dart';
-import 'info_list.dart';
+import 'package:ieee/Screens/user_screen.dart';
+import 'package:ieee/Widgets/info_list.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -10,13 +12,12 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  List<String> schoolYearList = InfoList().schoolYear;
-  List<String> collegeList = InfoList().collegeList;
-  List<String> majorList = InfoList().itMajorList;
-
   String selectedSchoolYear = "2015";
   String selectedCollege = "IT대학";
   String selectedMajor = "컴퓨터학부";
+
+  final recommendUrl = Uri.parse('http://10.0.2.2:5000/recommend');
+  final monthlyUrl = Uri.parse('http://10.0.2.2:5000/monthly');
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -35,235 +36,24 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.cyan,
+        elevation: 8.0,
+        title: const Text(
+          "회원 정보 입력",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+        ),
+        leading: const Icon(Icons.menu_book),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: const [
-                    Padding(
-                      padding: EdgeInsets.all(4.0),
-                      child: Icon(
-                        Icons.menu_book,
-                        color: Colors.amber,
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(4.0),
-                      child: Text(
-                        "IEEE Library App",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 24),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  height: 120,
-                ),
-
-                /*
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black38),
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Flexible(
-                          fit: FlexFit.tight,
-                          flex: 1,
-                          child: Column(
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.all(4.0),
-                                child: Text(
-                                  "상위 소속",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.black38,
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                width: MediaQuery.of(context).size.width * 0.28,
-                                child: DropdownButton(
-                                  borderRadius: BorderRadius.circular(10),
-                                  isDense: true,
-                                  value: selectedCollege,
-                                  items: collegeList.map((value) {
-                                    return DropdownMenuItem(
-                                      value: value,
-                                      child: Text(
-                                        value,
-                                        style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedCollege = value.toString();
-                                    });
-                                  },
-                                  icon: const Icon(Icons.arrow_drop_down),
-                                  iconSize: 16,
-                                  underline: const SizedBox.shrink(),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Flexible(
-                          flex: 1,
-                          fit: FlexFit.tight,
-                          child: Column(
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.all(4.0),
-                                child: Text(
-                                  "소속",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.black38,
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                width: MediaQuery.of(context).size.width * 0.28,
-                                child: DropdownButton(
-                                  borderRadius: BorderRadius.circular(10),
-                                  isDense: true,
-                                  value: selectedMajor,
-                                  items: majorList.map((value) {
-                                    return DropdownMenuItem(
-                                      value: value,
-                                      child: Text(
-                                        value,
-                                        style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedMajor = value.toString();
-                                    });
-                                  },
-                                  icon: const Icon(Icons.arrow_drop_down),
-                                  iconSize: 16,
-                                  underline: const SizedBox(),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Flexible(
-                          fit: FlexFit.tight,
-                          flex: 1,
-                          child: Column(
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.all(4.0),
-                                child: Text(
-                                  "입학년도",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: Colors.black38,
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                width: MediaQuery.of(context).size.width * 0.28,
-                                child: DropdownButton(
-                                  borderRadius: BorderRadius.circular(10),
-                                  isDense: true,
-                                  value: selectedSchoolYear,
-                                  items: schoolYearList.map((value) {
-                                    return DropdownMenuItem(
-                                      value: value,
-                                      child: Text(
-                                        value,
-                                        style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      selectedSchoolYear = value.toString();
-                                    });
-                                  },
-                                  icon: const Icon(Icons.arrow_drop_down),
-                                  iconSize: 16,
-                                  underline: const SizedBox(),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
                 Container(
                   height: 20,
                 ),
-                OutlinedButton.icon(
-                    icon: const Icon(
-                      Icons.save_rounded,
-                      size: 24,
-                      color: Colors.amber,
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => MainScreen(
-                                    year: selectedSchoolYear,
-                                    college: selectedCollege,
-                                    major: selectedMajor,
-                                  )));
-                    },
-                    label: const Text(
-                      '입력',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.black),
-                    )),
-                */
-
                 Form(
                   key: _formKey,
                   child: Column(
@@ -285,8 +75,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           border: OutlineInputBorder(),
                           hintText: 'ex) IT 대학',
                           labelText: '상위 소속',
-                          hintStyle: TextStyle(fontWeight: FontWeight.bold,),
-                          labelStyle: TextStyle(fontWeight: FontWeight.bold,),
+                          hintStyle: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          labelStyle: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       const Padding(padding: EdgeInsets.fromLTRB(0, 0, 0, 20)),
@@ -304,11 +98,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
-                          hintText: 'ex) 컴퓨터학과',
-                          hintStyle: TextStyle(fontWeight: FontWeight.bold,),
-                          labelStyle: TextStyle(fontWeight: FontWeight.bold,),
+                          hintText: 'ex) 컴퓨터학부',
+                          hintStyle: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          labelStyle: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
                           labelText: '소속',
-
                         ),
                         controller: _majorController,
                       ),
@@ -329,8 +126,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           border: OutlineInputBorder(),
                           hintText: 'ex) 2015',
                           labelText: '입학년도',
-                          hintStyle: TextStyle(fontWeight: FontWeight.bold,),
-                          labelStyle: TextStyle(fontWeight: FontWeight.bold,),
+                          hintStyle: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          labelStyle: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         controller: _yearController,
                       ),
@@ -338,27 +139,33 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
-                OutlinedButton.icon(
-                    icon: const Icon(
-                      Icons.save_rounded,
-                      size: 24,
-                      color: Colors.amber,
-                    ),
-                    onPressed: () {
-                      if(_formKey.currentState!.validate()) {
+                OutlinedButton(
+                    onPressed: () async {
+                      if (_formKey.currentState!.validate()) {
                         _formKey.currentState?.save();
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => MainScreen(
-                                  year: selectedSchoolYear,
-                                  college: selectedCollege,
-                                  major: selectedMajor,
-                                )));
+                        InfoList().userInfo["college"] = selectedCollege;
+                        InfoList().userInfo["major"] = selectedMajor;
+                        InfoList().userInfo["year"] = selectedSchoolYear;
+
+                        await http
+                            .post(recommendUrl,
+                                body: json.encode({
+                                  'college': selectedCollege,
+                                  'year': selectedSchoolYear,
+                                  'major': selectedMajor,
+                                }))
+                            .then((value) => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => UserScreen(
+                                          year: selectedSchoolYear,
+                                          major: selectedMajor,
+                                          college: selectedCollege,
+                                        ))));
                       }
                     },
-                    label: const Text(
-                      '입력',
+                    child: const Text(
+                      '로그인',
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,

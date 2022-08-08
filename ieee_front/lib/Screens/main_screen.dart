@@ -1,32 +1,105 @@
 import 'package:flutter/material.dart';
-import 'package:ieee/info_list.dart';
-import 'package:ieee/monthly_trend_book_list.dart';
-import 'package:ieee/recommend_book_list_screen.dart';
-import 'package:ieee/weekly_trend_book_list_screen.dart';
-import 'package:ieee/yearly_trend_book_list.dart';
+import 'package:ieee/Widgets/info_list.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({
     Key? key,
-    required this.year,
-    required this.college,
-    required this.major,
+    required this.recommendBookList,
   }) : super(key: key);
-  final String year;
-  final String college;
-  final String major;
+  final List<dynamic> recommendBookList;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  Map<String, String> recommendBookList = InfoList().recommendBookList;
-  Map<String, String> trendBookList = InfoList().trendBookList;
+  final List<String> _years = [
+    "2017",
+    "2018",
+    "2019",
+    "2020",
+    "2021",
+    "2022",
+  ];
+  final List<String> _months = [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "10",
+    "11",
+    "12",
+  ];
+  String _selectedYear = "2018";
+  String _selectedMonth = "01";
+  int _selectedIndex = 0;
+
+  final recommendUrl = Uri.parse('http://10.0.2.2:5000/recommend');
+  final monthlyUrl = Uri.parse('http://10.0.2.2:5000/monthly');
+  final yearlyUrl = Uri.parse('http://10.0.2.2:5000/yearly');
+
+  late dynamic year;
+  late dynamic college;
+  late dynamic major;
+  late List<dynamic> recommendList = widget.recommendBookList;
+  late List<dynamic> monthlyList;
+
+  @override
+  void initState() {
+    super.initState();
+    if (InfoList().userInfo.isNotEmpty) {
+      year = InfoList().userInfo["year"];
+      college = InfoList().userInfo["college"];
+      major = InfoList().userInfo["major"];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.cyan,
+        elevation: 8.0,
+        actions: [
+          IconButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              icon: const Icon(Icons.edit))
+        ],
+        title: const Text(
+          "회원 정보",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+        ),
+        leading: const Icon(Icons.person),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.cyan,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white.withOpacity(.60),
+        selectedFontSize: 14,
+        unselectedFontSize: 14,
+        currentIndex: _selectedIndex,
+        onTap: (int index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        showUnselectedLabels: false,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.recommend), label: "추천 도서"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.calendar_month), label: "월간 도서"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.trending_up), label: "연간 도서"),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -35,42 +108,6 @@ class _MainScreenState extends State<MainScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: <Widget>[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: const [
-                          Padding(
-                            padding: EdgeInsets.all(4.0),
-                            child: Icon(
-                              Icons.menu_book,
-                              color: Colors.amber,
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.all(4.0),
-                            child: Text(
-                              "Main Screen",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 24),
-                            ),
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          icon: const Icon(
-                            Icons.arrow_back_ios,
-                            size: 16,
-                            color: Colors.amber,
-                          )),
-                    ],
-                  ),
-                  Container(
-                    height: 40,
-                  ),
                   Container(
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.black38),
@@ -87,7 +124,7 @@ class _MainScreenState extends State<MainScreen> {
                               child: Text(
                                 "상위 소속",
                                 style: TextStyle(
-                                  fontSize: 20,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -95,9 +132,9 @@ class _MainScreenState extends State<MainScreen> {
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
-                                widget.college,
+                                college,
                                 style: const TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -111,7 +148,7 @@ class _MainScreenState extends State<MainScreen> {
                               child: Text(
                                 "소속",
                                 style: TextStyle(
-                                  fontSize: 20,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -119,9 +156,9 @@ class _MainScreenState extends State<MainScreen> {
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
-                                widget.major,
+                                major,
                                 style: const TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -135,7 +172,7 @@ class _MainScreenState extends State<MainScreen> {
                               child: Text(
                                 "입학년도",
                                 style: TextStyle(
-                                  fontSize: 20,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -143,9 +180,9 @@ class _MainScreenState extends State<MainScreen> {
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Text(
-                                widget.year,
+                                year,
                                 style: const TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -158,269 +195,496 @@ class _MainScreenState extends State<MainScreen> {
                   Container(
                     height: 40,
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  IndexedStack(
+                    index: _selectedIndex,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            OutlinedButton.icon(
-                              icon: const Icon(
-                                Icons.recommend_outlined,
-                                color: Colors.amber,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(
+                                Icons.recommend,
+                                color: Colors.blueAccent,
                               ),
-                              label: const Text(
+                              SizedBox(
+                                width: 5,
+                              ),
+                              Text(
                                 "추천 도서 목록",
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 20,
                                     color: Colors.black),
                               ),
-                              onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            RecommendBookListScreen(
-                                                year: widget.year,
-                                                college: widget.college,
-                                                major: widget.major)));
-                              },
-                            ),
-                            Container(
-                              height: 40,
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.black38),
-                                borderRadius: BorderRadius.circular(10.0),
+                            ],
+                          ),
+                          Container(
+                            height: 40,
+                          ),
+                          ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: recommendList.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                return Column(
+                                  children: [
+                                    Card(
+                                      child: Column(
+                                        children: [
+                                          ListTile(
+                                            title: Padding(
+                                              child: Text(
+                                                recommendList[index]["서명"],
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight:
+                                                        FontWeight.normal),
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 15,
+                                              ),
+                                            ),
+                                            subtitle: Padding(
+                                              child: Text(
+                                                recommendList[index]["저자명"],
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 15,
+                                              ),
+                                            ),
+                                            leading: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(
+                                                  Icons.eco,
+                                                  color: Colors.yellow,
+                                                  size: 16,
+                                                ),
+                                                Text(
+                                                  "${index + 1}등",
+                                                  style: const TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ],
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                            ),
+                                            trailing: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  recommendList[index]["소장위치"],
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ],
+                                            ),
+                                            isThreeLine: true,
+                                            // dense: true,
+                                          ),
+                                        ],
+                                        mainAxisSize: MainAxisSize.min,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16.0)),
+                                      elevation: 4,
+                                    ),
+                                  ],
+                                );
+                              }),
+                        ],
+                      ),
+                      // 추천 도서 목록
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: const [
+                                  Icon(
+                                    Icons.calendar_month,
+                                    color: Colors.blueAccent,
+                                  ),
+                                  SizedBox(
+                                    width: 5,
+                                  ),
+                                  Text(
+                                    "월간 인기 도서",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20,
+                                        color: Colors.black),
+                                  ),
+                                ],
                               ),
-                              child: ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: recommendBookList.length,
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    String key =
-                                        recommendBookList.keys.elementAt(index);
-                                    return Column(
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(vertical: 10.0),
-                                          child: ListTile(
-                                            title: Text(
-                                              key,
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  SizedBox(
+                                    width: 60,
+                                    child: DropdownButton(
+                                        icon: const Icon(Icons.arrow_downward),
+                                        isDense: true,
+                                        iconSize: 20,
+                                        elevation: 16,
+                                        value: _selectedYear,
+                                        underline: Container(
+                                          height: 2,
+                                          color: Colors.cyan,
+                                        ),
+                                        isExpanded: true,
+                                        items: _years.map((String y) {
+                                          return DropdownMenuItem(
+                                            child: Text(
+                                              y,
                                               style: const TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.bold),
                                             ),
-                                            subtitle: Text(
-                                              "${recommendBookList[key]}",
+                                            value: y,
+                                          );
+                                        }).toList(),
+                                        onChanged: (dynamic value) {
+                                          setState(() {
+                                            _selectedYear = value;
+                                          });
+                                        }),
+                                  ),
+                                  SizedBox(
+                                    width: 40,
+                                    child: DropdownButton(
+                                        icon: const Icon(Icons.arrow_downward),
+                                        isDense: true,
+                                        iconSize: 20,
+                                        elevation: 16,
+                                        value: _selectedMonth,
+                                        underline: Container(
+                                          height: 2,
+                                          color: Colors.cyan,
+                                        ),
+                                        isExpanded: true,
+                                        items: _months.map((String m) {
+                                          return DropdownMenuItem(
+                                            child: Text(
+                                              m,
                                               style: const TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.bold),
                                             ),
+                                            value: m,
+                                          );
+                                        }).toList(),
+                                        onChanged: (dynamic value) {
+                                          setState(() {
+                                            _selectedMonth = value;
+                                          });
+                                        }),
+                                  ),
+                                  const SizedBox(
+                                    width: 5,
+                                  ),
+                                  OutlinedButton.icon(
+                                    onPressed: () {},
+                                    style: OutlinedButton.styleFrom(
+                                        primary: Colors.cyan),
+                                    icon: const Icon(
+                                      Icons.search,
+                                      size: 12,
+                                    ),
+                                    label: const Text(
+                                      "검색",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Container(
+                            height: 20,
+                          ),
+                          Container(
+                            height: 20,
+                          ),
+                          ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: recommendList.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                return Column(
+                                  children: [
+                                    Card(
+                                      child: Column(
+                                        children: [
+                                          ListTile(
+                                            title: Padding(
+                                              child: Text(
+                                                recommendList[index]["서명"],
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight:
+                                                        FontWeight.normal),
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 15,
+                                              ),
+                                            ),
+                                            subtitle: Padding(
+                                              child: Text(
+                                                recommendList[index]["저자명"],
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 15,
+                                              ),
+                                            ),
+                                            leading: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(
+                                                  Icons.eco,
+                                                  color: Colors.yellow,
+                                                  size: 16,
+                                                ),
+                                                Text(
+                                                  "${index + 1}등",
+                                                  style: const TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ],
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                            ),
+                                            trailing: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  recommendList[index]["소장위치"],
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ],
+                                            ),
+                                            isThreeLine: true,
+                                            // dense: true,
                                           ),
-                                        )
-                                      ],
-                                    );
-                                  }),
-                            ),
-                          ],
-                        ),
+                                        ],
+                                        mainAxisSize: MainAxisSize.min,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16.0)),
+                                      elevation: 4,
+                                    ),
+                                  ],
+                                );
+                              }),
+                        ],
                       ),
-                      Container(
-                        width: 40,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: const [
+                                  Icon(
+                                    Icons.calendar_month,
+                                    color: Colors.blueAccent,
+                                  ),
+                                  SizedBox(
+                                    width: 5,
+                                  ),
+                                  Text(
+                                    "연간 인기 도서",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20,
+                                        color: Colors.black),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  SizedBox(
+                                    width: 80,
+                                    child: DropdownButton(
+                                        icon: const Icon(Icons.arrow_downward),
+                                        isDense: true,
+                                        iconSize: 20,
+                                        elevation: 16,
+                                        value: _selectedYear,
+                                        underline: Container(
+                                          height: 2,
+                                          color: Colors.cyan,
+                                        ),
+                                        isExpanded: true,
+                                        items: _years.map((String y) {
+                                          return DropdownMenuItem(
+                                            child: Text(
+                                              y,
+                                              style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                            value: y,
+                                          );
+                                        }).toList(),
+                                        onChanged: (dynamic value) {
+                                          setState(() {
+                                            _selectedYear = value;
+                                          });
+                                        }),
+                                  ),
+                                  const SizedBox(
+                                    width: 5,
+                                  ),
+                                  OutlinedButton.icon(
+                                    onPressed: () {},
+                                    style: OutlinedButton.styleFrom(
+                                        primary: Colors.cyan),
+                                    icon: const Icon(
+                                      Icons.search,
+                                      size: 12,
+                                    ),
+                                    label: const Text(
+                                      "검색",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Container(
+                            height: 40,
+                          ),
+                          ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: recommendList.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                return Column(
+                                  children: [
+                                    Card(
+                                      child: Column(
+                                        children: [
+                                          ListTile(
+                                            title: Padding(
+                                              child: Text(
+                                                recommendList[index]["서명"],
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight:
+                                                        FontWeight.normal),
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 15,
+                                              ),
+                                            ),
+                                            subtitle: Padding(
+                                              child: Text(
+                                                recommendList[index]["저자명"],
+                                                style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 15,
+                                              ),
+                                            ),
+                                            leading: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(
+                                                  Icons.eco,
+                                                  color: Colors.yellow,
+                                                  size: 16,
+                                                ),
+                                                Text(
+                                                  "${index + 1}등",
+                                                  style: const TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ],
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                            ),
+                                            trailing: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  recommendList[index]["소장위치"],
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ],
+                                            ),
+                                            isThreeLine: true,
+                                            // dense: true,
+                                          ),
+                                        ],
+                                        mainAxisSize: MainAxisSize.min,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(16.0)),
+                                      elevation: 4,
+                                    ),
+                                  ],
+                                );
+                              }),
+                        ],
                       ),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            OutlinedButton.icon(
-                              icon: const Icon(
-                                Icons.trending_up,
-                                color: Colors.amber,
-                              ),
-                              label: const Text(
-                                "주간 인기 도서",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            WeeklyTrendBookListScreen(
-                                                year: widget.year,
-                                                college: widget.college,
-                                                major: widget.major)));
-                              },
-                            ),
-                            Container(
-                              height: 40,
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.black38),
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                              child: ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: 1,
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    String key =
-                                        recommendBookList.keys.elementAt(index);
-                                    return Column(
-                                      children: [
-                                        ListTile(
-                                          title: Text(
-                                            key,
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          subtitle: Text(
-                                            "${recommendBookList[key]}",
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        )
-                                      ],
-                                    );
-                                  }),
-                            ),
-                            Container(
-                              height: 40,
-                            ),
-                            OutlinedButton.icon(
-                              icon: const Icon(
-                                Icons.trending_up,
-                                color: Colors.amber,
-                              ),
-                              label: const Text(
-                                "월간 인기 도서",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20,
-                                    color: Colors.black),
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            MonthlyTrendBookListScreen(
-                                                year: widget.year,
-                                                college: widget.college,
-                                                major: widget.major)));
-                              },
-                            ),
-                            Container(
-                              height: 40,
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.black38),
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                              child: ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: 1,
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    String key =
-                                        recommendBookList.keys.elementAt(index);
-                                    return Column(
-                                      children: [
-                                        ListTile(
-                                          title: Text(
-                                            key,
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          subtitle: Text(
-                                            "${recommendBookList[key]}",
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        )
-                                      ],
-                                    );
-                                  }),
-                            ),
-                            Container(
-                              height: 40,
-                            ),
-                            OutlinedButton.icon(
-                              icon: const Icon(
-                                Icons.trending_up,
-                                color: Colors.amber,
-                              ),
-                              label: const Text(
-                                "연간 인기 도서",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20,
-                                    color: Colors.black),
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            YearlyTrendBookListScreen(
-                                                year: widget.year,
-                                                college: widget.college,
-                                                major: widget.major)));
-                              },
-                            ),
-                            Container(
-                              height: 40,
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.black38),
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                              child: ListView.builder(
-                                  shrinkWrap: true,
-                                  itemCount: 1,
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    String key =
-                                        recommendBookList.keys.elementAt(index);
-                                    return Column(
-                                      children: [
-                                        ListTile(
-                                          title: Text(
-                                            key,
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          subtitle: Text(
-                                            "${recommendBookList[key]}",
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        )
-                                      ],
-                                    );
-                                  }),
-                            ),
-                          ],
-                        ),
-                      )
                     ],
                   ),
                 ]),
